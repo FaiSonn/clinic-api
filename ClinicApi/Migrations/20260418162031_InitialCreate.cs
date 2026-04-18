@@ -4,8 +4,6 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace ClinicApi.Migrations
 {
     /// <inheritdoc />
@@ -109,20 +107,6 @@ namespace ClinicApi.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.InsertData(
-                table: "Doctors",
-                columns: new[] { "Id", "FullName", "Room", "Schedule", "Specialization" },
-                values: new object[,]
-                {
-                    { 1, "Петров Алексей Васильевич", "101", "Пн-Пт 9:00-15:00", "Терапевт" },
-                    { 2, "Козлова Наталья Сергеевна", "205", "Вт,Чт 10:00-16:00", "Кардиолог" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "Patients",
-                columns: new[] { "Id", "DateOfBirth", "DoctorId", "FullName", "Phone" },
-                values: new object[] { 1, new DateTime(1985, 3, 12, 0, 0, 0, 0, DateTimeKind.Unspecified), 1, "Иванова Мария Петровна", "+7 912 345-67-89" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_DoctorId",

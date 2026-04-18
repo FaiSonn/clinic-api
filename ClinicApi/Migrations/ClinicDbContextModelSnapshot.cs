@@ -83,24 +83,6 @@ namespace ClinicApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Doctors");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            FullName = "Петров Алексей Васильевич",
-                            Room = "101",
-                            Schedule = "Пн-Пт 9:00-15:00",
-                            Specialization = "Терапевт"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            FullName = "Козлова Наталья Сергеевна",
-                            Room = "205",
-                            Schedule = "Вт,Чт 10:00-16:00",
-                            Specialization = "Кардиолог"
-                        });
                 });
 
             modelBuilder.Entity("ClinicApi.Models.Patient", b =>
@@ -130,16 +112,6 @@ namespace ClinicApi.Migrations
                     b.HasIndex("DoctorId");
 
                     b.ToTable("Patients");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            DateOfBirth = new DateTime(1985, 3, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DoctorId = 1,
-                            FullName = "Иванова Мария Петровна",
-                            Phone = "+7 912 345-67-89"
-                        });
                 });
 
             modelBuilder.Entity("ClinicApi.Models.Prescription", b =>
