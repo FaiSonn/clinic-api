@@ -3,6 +3,7 @@ using ClinicApi.Data;
 using ClinicApi.Models;
 using StackExchange.Redis;
 using Prometheus;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,18 @@ var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL") ?? "localhost:637
 builder.Services.AddSingleton<IConnectionMultiplexer>(
     ConnectionMultiplexer.Connect(redisUrl));
 
-builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
+
+builder.Services.AddControllers().AddJsonOptions(opts =>
+{
+    opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    opts.JsonSerializerOptions.WriteIndented = false;
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -26,6 +38,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+app.UseCors("AllowAll");
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpMetrics();

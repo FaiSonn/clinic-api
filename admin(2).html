@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Поликлиника №3 — Администратор</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+body { background: #f0f2f5; color: #222; }
+.header { background: #1a56a0; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 18px; }
+.layout { display: flex; min-height: calc(100vh - 50px); }
+.sidebar { width: 200px; background: white; border-right: 1px solid #ddd; padding: 16px 0; display: flex; flex-direction: column; }
+.nav-item { padding: 11px 20px; cursor: pointer; font-size: 14px; color: #444; border-left: 3px solid transparent; }
+.nav-item:hover { background: #f0f4ff; color: #1a56a0; }
+.nav-item.active { background: #e8f0fe; color: #1a56a0; border-left-color: #1a56a0; font-weight: bold; }
+.content { flex: 1; padding: 24px; }
+.page { display: none; }
+.page.active { display: block; }
+h2 { font-size: 20px; margin-bottom: 16px; color: #1a56a0; }
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: white; border-radius: 8px; padding: 16px; border: 1px solid #e0e0e0; }
+.stat-card .num { font-size: 32px; font-weight: bold; color: #1a56a0; }
+.stat-card .lbl { font-size: 13px; color: #888; margin-top: 4px; }
+.card { background: white; border-radius: 8px; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 16px; }
+.card-header { padding: 14px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+.card-header h3 { font-size: 15px; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #f8f9fa; padding: 10px 16px; text-align: left; font-size: 12px; color: #666; border-bottom: 1px solid #eee; }
+td { padding: 11px 16px; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafbff; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+.badge-green { background: #e6f4ea; color: #2e7d32; }
+.badge-blue { background: #e3f2fd; color: #1565c0; }
+.badge-amber { background: #fff8e1; color: #f57f17; }
+.badge-red { background: #fce4ec; color: #c62828; }
+.btn { cursor: pointer; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-weight: bold; }
+.btn-primary { background: #1a56a0; color: white; }
+.btn-success { background: #2e7d32; color: white; }
+.btn-danger { background: #c62828; color: white; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 10px; padding: 24px; width: 420px; max-width: 95vw; }
+.modal h3 { margin-bottom: 16px; color: #1a56a0; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; }
+.form-group input, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.alert { padding: 10px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
+.alert-success { background: #e6f4ea; color: #2e7d32; }
+.alert-error { background: #fce4ec; color: #c62828; }
+.empty { text-align: center; padding: 30px; color: #888; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🏥 Поликлиника №3 — Панель администратора</h1>
+  <span>Полный доступ к системе</span>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="nav-item active" data-page="dashboard">📊 Дашборд</div>
+    <div class="nav-item" data-page="doctors">👨‍⚕️ Врачи</div>
+    <div class="nav-item" data-page="patients">🧑 Пациенты</div>
+    <div class="nav-item" data-page="appointments">📅 Приёмы</div>
+    <div class="nav-item" data-page="prescriptions">💊 Назначения</div>
+  </div>
+  <div class="content">
+    <div id="alert-box"></div>
+
+    <div id="page-dashboard" class="page active">
+      <h2>Дашборд</h2>
+      <div class="stats">
+        <div class="stat-card"><div class="num" id="s-doc">—</div><div class="lbl">Врачей</div></div>
+        <div class="stat-card"><div class="num" id="s-pat">—</div><div class="lbl">Пациентов</div></div>
+        <div class="stat-card"><div class="num" id="s-app">—</div><div class="lbl">Приёмов</div></div>
+        <div class="stat-card"><div class="num" id="s-pre">—</div><div class="lbl">Назначений</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Последние приёмы</h3></div>
+        <table><thead><tr><th>Пациент</th><th>Врач</th><th>Дата</th><th>Причина</th><th>Статус</th></tr></thead>
+        <tbody id="dash-appts"><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <div id="page-doctors" class="page">
+      <h2>Врачи</h2>
+      <div class="card">
+        <div class="card-header"><h3>Список врачей</h3><button class="btn btn-primary btn-sm" id="btn-add-doctor">+ Добавить</button></div>
+        <table><thead><tr><th>ФИО</th><th>Специализация</th><th>Кабинет</th><th>Расписание</th><th></th></tr></thead>
+        <tbody id="doctors-tbody"><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <div id="page-patients" class="page">
+      <h2>Пациенты</h2>
+      <div class="card">
+        <div class="card-header"><h3>Список пациентов</h3><button class="btn btn-primary btn-sm" id="btn-add-patient">+ Добавить</button></div>
+        <table><thead><tr><th>ФИО</th><th>Дата рождения</th><th>Телефон</th><th>Врач</th><th></th></tr></thead>
+        <tbody id="patients-tbody"><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <div id="page-appointments" class="page">
+      <h2>Приёмы</h2>
+      <div class="card">
+        <div class="card-header"><h3>Все приёмы</h3><button class="btn btn-primary btn-sm" id="btn-add-appt">+ Записать</button></div>
+        <table><thead><tr><th>Пациент</th><th>Врач</th><th>Дата и время</th><th>Причина</th><th>Статус</th><th></th></tr></thead>
+        <tbody id="appts-tbody"><tr><td colspan="6" class="empty">Загрузка...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <div id="page-prescriptions" class="page">
+      <h2>Назначения</h2>
+      <div class="card">
+        <div class="card-header"><h3>Все назначения</h3><button class="btn btn-primary btn-sm" id="btn-add-presc">+ Добавить</button></div>
+        <table><thead><tr><th>Пациент</th><th>Препарат</th><th>Доза</th><th>Дней</th><th></th></tr></thead>
+        <tbody id="presc-tbody"><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="m-doctor">
+  <div class="modal">
+    <h3>Добавить врача</h3>
+    <div class="form-group"><label>ФИО</label><input id="d-name" placeholder="Иванов Иван Иванович"></div>
+    <div class="form-group"><label>Специализация</label><input id="d-spec" placeholder="Терапевт"></div>
+    <div class="form-group"><label>Кабинет</label><input id="d-room" placeholder="101"></div>
+    <div class="form-group"><label>Расписание</label><input id="d-sched" placeholder="Пн-Пт 9:00-15:00"></div>
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="closeM('m-doctor')">Отмена</button>
+      <button class="btn btn-success" onclick="saveDoctor()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-patient">
+  <div class="modal">
+    <h3>Добавить пациента</h3>
+    <div class="form-group"><label>ФИО</label><input id="p-name" placeholder="Иванова Мария Петровна"></div>
+    <div class="form-group"><label>Дата рождения</label><input id="p-dob" type="date"></div>
+    <div class="form-group"><label>Телефон</label><input id="p-phone" placeholder="+7 900 000-00-00"></div>
+    <div class="form-group"><label>Врач</label><select id="p-doc"></select></div>
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="closeM('m-patient')">Отмена</button>
+      <button class="btn btn-success" onclick="savePatient()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-appt">
+  <div class="modal">
+    <h3>Записать на приём</h3>
+    <div class="form-group"><label>Пациент</label><select id="a-pat"></select></div>
+    <div class="form-group"><label>Врач</label><select id="a-doc"></select></div>
+    <div class="form-group"><label>Дата и время</label><input id="a-dt" type="datetime-local"></div>
+    <div class="form-group"><label>Причина</label><input id="a-reason" placeholder="Плановый осмотр"></div>
+    <div class="form-group"><label>Статус</label>
+      <select id="a-status">
+        <option value="pending">Ожидает</option>
+        <option value="approved">Подтверждён</option>
+        <option value="completed">Завершён</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="closeM('m-appt')">Отмена</button>
+      <button class="btn btn-success" onclick="saveAppt()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-presc">
+  <div class="modal">
+    <h3>Добавить назначение</h3>
+    <div class="form-group"><label>Пациент</label><select id="pr-pat"></select></div>
+    <div class="form-group"><label>Приём</label><select id="pr-appt"></select></div>
+    <div class="form-group"><label>Препарат</label><input id="pr-drug" placeholder="Амоксициллин 500мг"></div>
+    <div class="form-group"><label>Доза</label><input id="pr-dose" placeholder="2 раза в день"></div>
+    <div class="form-group"><label>Курс (дней)</label><input id="pr-days" type="number" value="7" min="1"></div>
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="closeM('m-presc')">Отмена</button>
+      <button class="btn btn-success" onclick="savePresc()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost/api';
+let docs=[], pats=[], appts=[], prescs=[];
+
+function n(v){ return v||'—'; }
+function showAlert(msg, type='success'){
+  const b=document.getElementById('alert-box');
+  b.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(()=>b.innerHTML='',3000);
+}
+function statusBadge(s){
+  const m={pending:['amber','Ожидает'],approved:['blue','Подтверждён'],completed:['green','Завершён'],rejected:['red','Отклонён']};
+  const[c,l]=m[s]||['green',s];
+  return `<span class="badge badge-${c}">${l}</span>`;
+}
+async function api(url,opts={}){
+  try{
+    const r=await fetch(API+url,{headers:{'Content-Type':'application/json'},...opts});
+    if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+': '+t);}
+    if(r.status===204)return null;
+    return await r.json();
+  }catch(e){showAlert('Ошибка: '+e.message,'error');return null;}
+}
+function openM(id){ document.getElementById(id).classList.add('open'); }
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('page-'+el.dataset.page).classList.add('active');
+    loadPage(el.dataset.page);
+  });
+});
+
+async function loadPage(name){
+  if(name==='dashboard') await loadDash();
+  else if(name==='doctors') await loadDocs();
+  else if(name==='patients') await loadPats();
+  else if(name==='appointments') await loadAppts();
+  else if(name==='prescriptions') await loadPrescs();
+}
+
+async function loadDash(){
+  docs=await api('/Doctors')||[];
+  pats=await api('/Patients')||[];
+  appts=await api('/Appointments')||[];
+  prescs=await api('/Prescriptions')||[];
+  document.getElementById('s-doc').textContent=docs.length;
+  document.getElementById('s-pat').textContent=pats.length;
+  document.getElementById('s-app').textContent=appts.length;
+  document.getElementById('s-pre').textContent=prescs.length;
+  const tb=document.getElementById('dash-appts');
+  if(!appts.length){tb.innerHTML='<tr><td colspan="5" class="empty">Нет приёмов</td></tr>';return;}
+  tb.innerHTML=appts.slice(-5).reverse().map(a=>`<tr>
+    <td>${n(a.Patient?.FullName||a.patient?.fullName)}</td>
+    <td>${n(a.Doctor?.FullName||a.doctor?.fullName)}</td>
+    <td>${new Date(a.DateTime||a.dateTime).toLocaleString('ru')}</td>
+    <td>${n(a.Reason||a.reason)}</td>
+    <td>${statusBadge(a.Status||a.status)}</td>
+  </tr>`).join('');
+}
+
+async function loadDocs(){
+  docs=await api('/Doctors')||[];
+  const tb=document.getElementById('doctors-tbody');
+  if(!docs.length){tb.innerHTML='<tr><td colspan="5" class="empty">Нет врачей</td></tr>';return;}
+  tb.innerHTML=docs.map(d=>`<tr>
+    <td><b>${n(d.FullName||d.fullName)}</b></td>
+    <td>${n(d.Specialization||d.specialization)}</td>
+    <td>${n(d.Room||d.room)}</td>
+    <td>${n(d.Schedule||d.schedule)}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="delDoc(${d.Id||d.id})">Удалить</button></td>
+  </tr>`).join('');
+}
+
+async function loadPats(){
+  pats=await api('/Patients')||[];
+  docs=await api('/Doctors')||[];
+  const tb=document.getElementById('patients-tbody');
+  if(!pats.length){tb.innerHTML='<tr><td colspan="5" class="empty">Нет пациентов</td></tr>';return;}
+  tb.innerHTML=pats.map(p=>{
+    const did=p.DoctorId||p.doctorId;
+    const d=docs.find(x=>(x.Id||x.id)===did);
+    return`<tr>
+      <td><b>${n(p.FullName||p.fullName)}</b></td>
+      <td>${new Date(p.DateOfBirth||p.dateOfBirth).toLocaleDateString('ru')}</td>
+      <td>${n(p.Phone||p.phone)}</td>
+      <td>${d?n(d.FullName||d.fullName):'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="delPat(${p.Id||p.id})">Удалить</button></td>
+    </tr>`;}).join('');
+}
+
+async function loadAppts(){
+  appts=await api('/Appointments')||[];
+  docs=await api('/Doctors')||[];
+  pats=await api('/Patients')||[];
+  const tb=document.getElementById('appts-tbody');
+  if(!appts.length){tb.innerHTML='<tr><td colspan="6" class="empty">Нет приёмов</td></tr>';return;}
+  tb.innerHTML=appts.map(a=>{
+    const pid=a.PatientId||a.patientId;
+    const did=a.DoctorId||a.doctorId;
+    const p=pats.find(x=>(x.Id||x.id)===pid);
+    const d=docs.find(x=>(x.Id||x.id)===did);
+    const st=a.Status||a.status;
+    const id=a.Id||a.id;
+    return`<tr>
+      <td>${p?n(p.FullName||p.fullName):'ID:'+pid}</td>
+      <td>${d?n(d.FullName||d.fullName):'ID:'+did}</td>
+      <td>${new Date(a.DateTime||a.dateTime).toLocaleString('ru')}</td>
+      <td>${n(a.Reason||a.reason)}</td>
+      <td>${statusBadge(st)}</td>
+      <td style="display:flex;gap:4px;">
+        ${st==='pending'?`<button class="btn btn-success btn-sm" onclick="approveA(${id})">✓</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="delAppt(${id})">✕</button>
+      </td>
+    </tr>`;}).join('');
+}
+
+async function loadPrescs(){
+  prescs=await api('/Prescriptions')||[];
+  pats=await api('/Patients')||[];
+  const tb=document.getElementById('presc-tbody');
+  if(!prescs.length){tb.innerHTML='<tr><td colspan="5" class="empty">Нет назначений</td></tr>';return;}
+  tb.innerHTML=prescs.map(p=>{
+    const pid=p.PatientId||p.patientId;
+    const pt=pats.find(x=>(x.Id||x.id)===pid);
+    return`<tr>
+      <td>${pt?n(pt.FullName||pt.fullName):'ID:'+pid}</td>
+      <td><b>${n(p.Drug||p.drug)}</b></td>
+      <td>${n(p.Dosage||p.dosage)}</td>
+      <td>${p.DurationDays||p.durationDays}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="delPresc(${p.Id||p.id})">Удалить</button></td>
+    </tr>`;}).join('');
+}
+
+document.getElementById('btn-add-doctor').onclick=()=>openM('m-doctor');
+document.getElementById('btn-add-patient').onclick=async()=>{
+  docs=await api('/Doctors')||[];
+  document.getElementById('p-doc').innerHTML=docs.map(d=>`<option value="${d.Id||d.id}">${d.FullName||d.fullName}</option>`).join('');
+  openM('m-patient');
+};
+document.getElementById('btn-add-appt').onclick=async()=>{
+  pats=await api('/Patients')||[];
+  docs=await api('/Doctors')||[];
+  document.getElementById('a-pat').innerHTML=pats.map(p=>`<option value="${p.Id||p.id}">${p.FullName||p.fullName}</option>`).join('');
+  document.getElementById('a-doc').innerHTML=docs.map(d=>`<option value="${d.Id||d.id}">${d.FullName||d.fullName}</option>`).join('');
+  openM('m-appt');
+};
+document.getElementById('btn-add-presc').onclick=async()=>{
+  pats=await api('/Patients')||[];
+  appts=await api('/Appointments')||[];
+  document.getElementById('pr-pat').innerHTML=pats.map(p=>`<option value="${p.Id||p.id}">${p.FullName||p.fullName}</option>`).join('');
+  document.getElementById('pr-appt').innerHTML=appts.map(a=>`<option value="${a.Id||a.id}">ID:${a.Id||a.id} — ${a.Reason||a.reason}</option>`).join('');
+  openM('m-presc');
+};
+
+async function saveDoctor(){
+  const r=await api('/Doctors',{method:'POST',body:JSON.stringify({fullName:document.getElementById('d-name').value,specialization:document.getElementById('d-spec').value,room:document.getElementById('d-room').value,schedule:document.getElementById('d-sched').value})});
+  if(r){closeM('m-doctor');showAlert('Врач добавлен!');loadDocs();}
+}
+async function savePatient(){
+  const dob=document.getElementById('p-dob').value;
+  const r=await api('/Patients',{method:'POST',body:JSON.stringify({fullName:document.getElementById('p-name').value,dateOfBirth:dob+'T00:00:00Z',phone:document.getElementById('p-phone').value,doctorId:parseInt(document.getElementById('p-doc').value)})});
+  if(r){closeM('m-patient');showAlert('Пациент добавлен!');loadPats();}
+}
+async function saveAppt(){
+  const r=await api('/Appointments',{method:'POST',body:JSON.stringify({patientId:parseInt(document.getElementById('a-pat').value),doctorId:parseInt(document.getElementById('a-doc').value),dateTime:new Date(document.getElementById('a-dt').value).toISOString(),reason:document.getElementById('a-reason').value,status:document.getElementById('a-status').value})});
+  if(r){closeM('m-appt');showAlert('Приём создан!');loadAppts();}
+}
+async function savePresc(){
+  const r=await api('/Prescriptions',{method:'POST',body:JSON.stringify({patientId:parseInt(document.getElementById('pr-pat').value),appointmentId:parseInt(document.getElementById('pr-appt').value),drug:document.getElementById('pr-drug').value,dosage:document.getElementById('pr-dose').value,durationDays:parseInt(document.getElementById('pr-days').value)})});
+  if(r){closeM('m-presc');showAlert('Назначение добавлено!');loadPrescs();}
+}
+async function approveA(id){
+  const a=appts.find(x=>(x.Id||x.id)===id);
+  if(!a)return;
+  const body={id:id,patientId:a.PatientId||a.patientId,doctorId:a.DoctorId||a.doctorId,dateTime:a.DateTime||a.dateTime,reason:a.Reason||a.reason,status:'approved'};
+  const r=await api('/Appointments/'+id,{method:'PUT',body:JSON.stringify(body)});
+  if(r!==undefined){showAlert('Приём подтверждён!');loadAppts();}
+}
+async function delDoc(id){if(!confirm('Удалить врача?'))return;await api('/Doctors/'+id,{method:'DELETE'});showAlert('Удалено!');loadDocs();}
+async function delPat(id){if(!confirm('Удалить пациента?'))return;await api('/Patients/'+id,{method:'DELETE'});showAlert('Удалено!');loadPats();}
+async function delAppt(id){if(!confirm('Удалить приём?'))return;await api('/Appointments/'+id,{method:'DELETE'});showAlert('Удалено!');loadAppts();}
+async function delPresc(id){if(!confirm('Удалить назначение?'))return;await api('/Prescriptions/'+id,{method:'DELETE'});showAlert('Удалено!');loadPrescs();}
+
+loadDash();
+</script>
+</body>
+</html>
