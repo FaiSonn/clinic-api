@@ -27,10 +27,11 @@ Docker Desktop
 git clone https://github.com/FaiSonn/clinic-api.git
 cd clinic-api
 docker compose up --build
-После запуска открой Swagger и выполни POST /api/Seed — заполнит базу тестовыми данными.
+
 Адреса сервисов
-СервисАдресSwagger UIhttp://localhost/swaggerGrafanahttp://localhost:3000Prometheushttp://localhost:9090PostgreSQLlocalhost:5432
-Роли пользователей
-РольФайлДоступПациентpatient.htmlПросмотр приёмов, назначений, запись к врачуАдминистраторadmin.htmlПолный доступ ко всем разделам системы
+Swagger UI  http://localhost/swagger
+Grafana http://localhost:3000
+Prometheus http://localhost:9090
+PostgreSQL localhost:5432
 Автор
-Файссунов А.А. — ТвГТУ, Б.ИВТ.ПРОМ.23.01
+Комиссаров В.Д — ТвГТУ, Б.ИВТ.ПРОМ.23.01
